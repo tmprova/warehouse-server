@@ -75,26 +75,19 @@ async function run() {
       res.send(result);
     });
 
-    // app.put("/itemAdd/:id", async (req, res) => {
-    //   const id = req.params.id;
-    //   const data = req.body;
-    //   console.log("from quantity", data);
-    //   const filter = { _id: ObjectId(id) };
-    //   const option = { upsert: true };
-    //   const updateDoc = {
-    //     $set: {
-    //       quatity: data.quantity,
-    //     },
-    //   };
-    //   const result = await collection.updateOne(filter, updateDoc, option);
-    //   res.send(result);
-    // });
-
     // to post new data
     app.post("/inventory", async (req, res) => {
       const newItem = req.body;
       console.log(newItem);
       const result = await collection.insertOne(newItem);
+      res.send(result);
+    });
+
+    // delete inventory
+    app.delete("/inventoryDetails/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await collection.deleteOne(query);
       res.send(result);
     });
   } finally {
