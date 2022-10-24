@@ -40,6 +40,24 @@ async function run() {
       res.send(inventory);
     });
 
+    // delivered inventory
+
+    app.put("/itemDelivered/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const data = req.body;
+      console.log(data);
+      const filter = { _id: ObjectId(id) };
+      const option = { upsert: true };
+      const updateDoc = {
+        $set: {
+          Quatity: data.Quatity - 1,
+        },
+      };
+      const result = await collection.updateOne(filter, updateDoc, option);
+      res.send(result);
+    });
+
     // update stock
     app.put("/itemAddToStock/:id", async (req, res) => {
       const id = req.params.id;
