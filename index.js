@@ -4,6 +4,8 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 require("dotenv").config();
 
+const jwt = require("jsonwebtoken");
+
 const cors = require("cors");
 const { application } = require("express");
 const app = express();
@@ -12,6 +14,23 @@ const port = process.env.PORT || 5000;
 // middleware====>>
 app.use(cors());
 app.use(express.json());
+
+// JSON WEB TOKEN
+function verifyJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(404).send({ message: "unauthorized access" });
+  }
+  const token = authHeader.split(" ")[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decoded) => {
+    if (error) {
+      return res.status(403).send({ message: "Forbidden Access" });
+    }
+    console.log("decoded", decoded);
+    req.decoded = decoded;
+    next();
+  });
+}
 
 // mondodb===>>>
 
@@ -75,12 +94,36 @@ async function run() {
       res.send(result);
     });
 
-    // to post new data
+    // to post new data to my item
     app.post("/inventory", async (req, res) => {
       const newItem = req.body;
       console.log(newItem);
-      const result = await collection.insertOne(newItem);
+      const result = await collection.insertOne(newItem.data);
       res.send(result);
+    });
+
+    // jwt auth
+    app.post("/login", async (req, res) => {
+      const user = req.body;
+      const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_KEY, {
+        expiresIn: "3d",
+      });
+      res.send({ accessToken });
+    });
+
+    // get my items
+
+    app.get("/myitems", verifyJWT, async (req, res) => {
+      const decodedEmail = req?.decoded?.email;
+      const email = req?.query?.email;
+      if (email === decodedEmail) {
+        const query = { email: email };
+        const cursor = productCollection.find(query);
+        const orders = await cursor.toArray();
+        res.send(orders);
+      } else {
+        res.status(403).send({ message: "Forbidden Access" });
+      }
     });
 
     // delete inventory
