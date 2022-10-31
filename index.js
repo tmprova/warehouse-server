@@ -7,7 +7,7 @@ require("dotenv").config();
 const jwt = require("jsonwebtoken");
 
 const cors = require("cors");
-const { application } = require("express");
+const { application, query } = require("express");
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -21,8 +21,9 @@ function verifyJWT(req, res, next) {
   if (!authHeader) {
     return res.status(404).send({ message: "unauthorized access" });
   }
-  const token = authHeader.split(" ")[1];
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decoded) => {
+  const accessToken = authHeader.split(" ")[1];
+
+  jwt.verify(accessToken, process.env.ACCESS_TOKEN_KEY, (error, decoded) => {
     if (error) {
       return res.status(403).send({ message: "Forbidden Access" });
     }
@@ -105,29 +106,49 @@ async function run() {
     // jwt auth
     app.post("/login", async (req, res) => {
       const user = req.body;
+      console.log(user.email);
       const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_KEY, {
-        expiresIn: "3d",
+        expiresIn: "10d",
       });
       res.send({ accessToken });
     });
 
     // get my items
 
-    app.get("/myitems", verifyJWT, async (req, res) => {
-      const decodedEmail = req?.decoded?.email;
-      const email = req?.query?.email;
-      if (email === decodedEmail) {
-        const query = { email: email };
-        const cursor = productCollection.find(query);
-        const orders = await cursor.toArray();
-        res.send(orders);
-      } else {
-        res.status(403).send({ message: "Forbidden Access" });
-      }
+    // app.get("/addedItems", verifyJWT, async (req, res) => {
+    //   console.log(verifyJWT);
+    //   const decodedEmail = req?.decoded?.email;
+    //   console.log(decodedEmail);
+    //   const email = req?.query?.email;
+    //   console.log(email);
+    //   if (email === decodedEmail) {
+    //     const query = { email: email };
+    //     const cursor = collection.find(query);
+    //     const verifyItem = await cursor.toArray();
+    //     res.send(verifyItem);
+    //   } else {
+    //     res.status(403).send({ message: "Forbidden Access" });
+    //   }
+    // });
+    app.get("/addedItems", async (req, res) => {
+      const email = req.query.email;
+      console.log(email);
+      const query = { email: email };
+      const cursor = collection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
     });
 
     // delete inventory
     app.delete("/inventoryDetails/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await collection.deleteOne(query);
+      res.send(result);
+    });
+
+    // delete my items
+    app.delete("/addedItems/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const result = await collection.deleteOne(query);
