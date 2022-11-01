@@ -119,7 +119,7 @@ async function run() {
     app.get("/addedItems", verifyJWT, async (req, res) => {
       const decodedEmail = req?.decoded?.email;
       const email = req.query.email;
-      console.log(email);
+      // console.log(email);
       if (decodedEmail === email) {
         const query = { email: email };
         const cursor = collection.find(query);
